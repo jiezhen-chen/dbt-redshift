@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Set, Any, Dict, Type, List
+from typing import Optional, Set, Any, Dict, Type
 from collections import namedtuple
 from dbt.adapters.base import PythonJobHelper
 from dbt.adapters.base.impl import AdapterConfig, ConstraintSupport
@@ -8,7 +8,6 @@ from dbt.adapters.base.meta import available
 from dbt.contracts.connection import AdapterResponse
 from dbt.contracts.graph.nodes import ConstraintType
 from dbt.events import AdapterLogger
-from dbt.adapters.base.relation import BaseRelation
 
 
 import dbt.exceptions
@@ -118,18 +117,6 @@ class RedshiftAdapter(SQLAdapter):
     def _get_cursor(self):
         return self.connections.get_thread_connection().handle.cursor()
 
-    def list_schemas(self, database: str, schema: Optional[str] = None) -> List[str]:
-        cursor = self._get_cursor()
-        results = []
-        for s in cursor.get_schemas(catalog=database, schema_pattern=schema):
-            results.append(s[0])
-        return results
-
-    @available
-    def check_schema_exists(self, database: str, schema: str) -> bool:
-        results = self.list_schemas(database=database, schema=schema)
-        return len(results) > 0
-
     def get_columns_in_relation(self, relation):
         # TODO handle cases where identifier not provided
         cursor = self._get_cursor()
@@ -155,41 +142,6 @@ class RedshiftAdapter(SQLAdapter):
                         RedshiftColumn(column[3], column[5], None, column[6], column[8])
                     )
         return results
-
-    def _get_tables(self, database: Optional[str], schema: Optional[str]):
-        cursor = self._get_cursor()
-        results = []
-        for table in cursor.get_tables(
-            catalog=database,
-            schema_pattern=schema,
-            table_name_pattern=None,
-            types=["VIEW", "TABLE"],
-        ):
-            results.append([table[0], table[1], table[2], table[3]])
-            # kinda feel like it might not be a good thing to do this by index
-        return results
-
-    def list_relations_without_caching(  # type: ignore
-        self, schema_relation: BaseRelation
-    ) -> List[RedshiftRelation]:
-        results = self._get_tables(schema_relation.database, schema_relation.schema)
-        relations = []
-        quote_policy = {"database": True, "schema": True, "identifier": True}
-        for _database, _schema, name, _type in results:
-            try:
-                _type = self.Relation.get_relation_type(_type)
-            except ValueError:
-                _type = self.Relation.External
-            relations.append(
-                self.Relation.create(
-                    database=_database,
-                    schema=_schema,
-                    identifier=name,
-                    quote_policy=quote_policy,
-                    type=_type,
-                )
-            )
-        return relations
 
     def _link_cached_database_relations(self, schemas: Set[str]):
         """

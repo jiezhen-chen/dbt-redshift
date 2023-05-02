@@ -472,35 +472,6 @@ class TestRedshiftAdapter(unittest.TestCase):
         return mock_cursor
 
     @mock.patch("dbt.adapters.redshift.impl.RedshiftAdapter._get_cursor")
-    def test_get_tables(self, mock_cursor):
-        mock_cursor.return_value.get_tables.return_value = [
-            ("apple", "banana", "cherry", "orange")
-        ]
-        results = self.adapter._get_tables(database="somedb", schema="someschema")
-        self.assertTrue(results == [["apple", "banana", "cherry", "orange"]])
-
-    @mock.patch("dbt.adapters.redshift.impl.RedshiftAdapter._get_tables")
-    def test_list_relations_without_caching(self, mock_get_tables):
-        mock_get_tables.return_value = [["somedb", "someschema", "sometb", "VIEW"]]
-        mock_schema = mock.MagicMock(database="somedb", schema="someschema")
-        results = self.adapter.list_relations_without_caching(mock_schema)
-        self.assertTrue(results[0].database == "somedb")
-        self.assertTrue(results[0].schema == "someschema")
-        self.assertTrue(results[0].identifier == "sometb")
-
-    @mock.patch("dbt.adapters.redshift.impl.RedshiftAdapter._get_cursor")
-    def test_list_schemas(self, mock_cursor):
-        mock_cursor.return_value.get_schemas.return_value = ["schema1"], ["schema2"]
-        results = self.adapter.list_schemas(database="somedb", schema="someschema")
-        self.assertTrue(results == ["schema1", "schema2"])
-
-    @mock.patch("dbt.adapters.redshift.impl.RedshiftAdapter.list_schemas")
-    def test_check_schema_exists(self, mock_list_schemas):
-        mock_list_schemas.return_value = ["schema1", "schema2"]
-        results = self.adapter.check_schema_exists(database="somedb", schema="someschema")
-        self.assertTrue(results is True)
-
-    @mock.patch("dbt.adapters.redshift.impl.RedshiftAdapter._get_cursor")
     def test_get_columns_in_relation_char(self, mock_cursor):
         mock_relation = mock.MagicMock(database="somedb", schema="someschema", identifier="iden")
         mock_cursor.return_value.get_columns.return_value = [
