@@ -118,7 +118,6 @@ class RedshiftAdapter(SQLAdapter):
         return self.connections.get_thread_connection().handle.cursor()
 
     def get_columns_in_relation(self, relation):
-        # TODO handle cases where identifier not provided
         cursor = self._get_cursor()
         results = []
         if relation.identifier:
@@ -141,6 +140,8 @@ class RedshiftAdapter(SQLAdapter):
                     results.append(
                         RedshiftColumn(column[3], column[5], None, column[6], column[8])
                     )
+                else:
+                    results.append(RedshiftColumn(column[3], column[5], column[6], None, None))
         return results
 
     def _link_cached_database_relations(self, schemas: Set[str]):
