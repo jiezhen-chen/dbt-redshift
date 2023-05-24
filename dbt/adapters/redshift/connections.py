@@ -335,6 +335,8 @@ class RedshiftConnectionManager(SQLConnectionManager):
             if without_comments == "":
                 continue
 
+            query = re.sub("%", "%%", query)
+
             connection, cursor = super().add_query(
                 query, auto_begin, bindings=bindings, abridge_sql_log=abridge_sql_log
             )
