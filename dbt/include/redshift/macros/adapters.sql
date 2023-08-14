@@ -246,6 +246,15 @@
       end as type
     from information_schema.views
     where table_schema ilike '{{ schema_relation.schema }}'
+    union all
+    select
+      database_name,
+      schema_name,
+      table_name,
+      lower(table_type)
+    from svv_all_tables
+    join svv_datashares ds on ds.consumer_database = svv_all_tables.database_name
+    where ds.share_type = 'INBOUND'
   {% endcall %}
   {{ return(load_result('list_relations_without_caching').table) }}
 {% endmacro %}
